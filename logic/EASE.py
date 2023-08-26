@@ -96,20 +96,44 @@ class EASE:
         Return:
             Dataframe of users + their predictions in sorted order
         """
+        # Dropping duplicate user and obtain the shape
         pred_df = pred_df[[self.user_col]].drop_duplicates()
         n_orig = pred_df.shape[0]
 
+        # Merge with lookup table from trainset and obtain the shape
         pred_df = pred_df.merge(pred_df.merge(
             self.user_lookup, on=[self.user_col], sort=False))
         n_curr = pred_df.shape[0]
 
+        # Check the difference of user count
         if n_orig - n_curr:
             print(
                 f"Number of unknown users from prediction data {n_orig - n_curr}")
 
-        _output_preds = []
-
-        # Select only user id in user data
+        # Select only user id in our user data
         _user_tensor = self.sparse.to_dense().index_select(
             dim=0, index=torch.LongTensor(pred_df[self.user_id_col])
         )
+
+        # Make (raw) prediction
+        # Using self.sparse (i.e., user-item interactions matrix) dot product with self.B
+        _preds_tensor = _user_tensor @ self.B
+        if remove_owned:
+            # Discount those items with large factor
+            print("Removing owned items")
+            # User-item matrix weighted with self.B (i.e., predicted items)
+            _preds_tensor += -1. * _user_tensor
+
+        # Initiating lost for output prediction
+        _output_preds = []
+
+        print("\nTopK selected per users")
+        for _preds in _preds_tensor:
+            _output_preds.append(
+                [self.item_map[_id] for _id in _preds.topk(k).indices.tolist()]
+            )
+
+        # Create new columns (Series: list) where the value is predicted items each user
+        pred_df['predicted_items'] = _output_preds
+
+        return pred_df
