@@ -1,7 +1,3 @@
-import pandas as pd
-import torch
-
-
 class EASE:
     """
     EASE class construction
@@ -121,11 +117,12 @@ class EASE:
         if remove_owned:
             # Discount those items with large factor
             print("Removing owned items")
-            # User-item matrix weighted with self.B (i.e., predicted items)
-            _preds_tensor += -1. * _user_tensor
+            _preds_tensor += -1. * _user_tensor  # User-item matrix weighted with self.B (i.e., predicted items)
 
         # Initiating lost for output prediction
         _output_preds = []
+
+        self.temp = _preds_tensor[0].topk(10)
 
         print("\nTopK selected per users")
         for _preds in _preds_tensor:
@@ -133,7 +130,6 @@ class EASE:
                 [self.item_map[_id] for _id in _preds.topk(k).indices.tolist()]
             )
 
-        # Create new columns (Series: list) where the value is predicted items each user
         pred_df['predicted_items'] = _output_preds
 
         return pred_df
