@@ -1,3 +1,6 @@
+import numpy as np
+import pandas as pd
+import torch
 from sklearn.neighbors import KNeighborsClassifier
 
 
@@ -23,16 +26,15 @@ class KnnCBF:
         train = train.merge(self.item_lookup, on=[self.item_col], sort=False)
 
         # Creating similarity items
-        items = items.merge(items.merge(
-            self.item_lookup, on=[self.item_col], sort=False)
-        )
+        items = items.merge(self.item_lookup, on=[self.item_col], sort=False)
         items = items.drop(items.columns[:2], axis=1)
 
         # Reindexing items dataframe
         cols = list(items.columns)
         items = items[cols[-1:] + cols[:-1]]
 
-        self.train = train
+        self.train = train.groupby(self.user_col)[
+            self.item_id_col, self.score_col]
         self.items = items
 
     def generate_label(self, df, col):
@@ -48,7 +50,7 @@ class KnnCBF:
 
         return classifier.kneighbors(test)
 
-    def predict(self, pred_df, num_point=5, metric='cosine', k=10, remove_owned=True):
+    def predict(self, pred_df, num_point=3, metric='cosine', k=10, remove_owned=True):
         pred_df = pred_df[[self.user_col]].drop_duplicates()
         n_orig = pred_df.shape[0]
 
@@ -66,8 +68,8 @@ class KnnCBF:
         # Get the rating for each interacted items
         for _user in pred_df[self.user_col]:
             # Get current user's interacted items and respective rating
-            curr_user = self.train[self.train[self.user_col]
-                                   == _user][[self.item_id_col, self.score_col]]
+            # curr_user = self.train[self.train[self.user_col] == _user][[self.item_id_col, self.score_col]]
+            curr_user = self.train.get_group(_user)
             items = self.items
 
             # Get contents of the user's interacted items
@@ -92,7 +94,7 @@ class KnnCBF:
             result = np.sum(rating * output[0], axis=1) / num_point
 
             # Get top-k similar non-interacted items
-            top_tensor = torch.from_numpy(result).topk(10)
+            top_tensor = torch.from_numpy(result).topk(k)
             indices = top_tensor.indices.tolist()
             score = top_tensor.values.tolist()
 
