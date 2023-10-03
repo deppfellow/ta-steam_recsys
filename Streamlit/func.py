@@ -19,19 +19,6 @@ games = [
 ]
 
 
-def generate_container():
-    container = st.container()
-    img_col, pref_col = container.columns([3.8, 1.2])
-
-    # img_col.image(Image.open(response.content))
-    # pref_col.selectbox(
-    #     "Your rating:"
-    #     ["Positive", "Negative"],
-    #     key=app_id
-    # )
-    return img_col, pref_col
-
-
 def generate_gamebox(titles):
     titles_id = []
     for title in titles:
@@ -44,7 +31,6 @@ def generate_gamebox(titles):
         if resp.status_code == 200:
             container = st.container()
             img_col, pref_col = container.columns([3, 2])
-            # img_col, pref_col = generate_container()
 
             img_col.image(BytesIO(resp.content))
             pref_col.selectbox(
