@@ -1,28 +1,18 @@
+import pandas as pd
 import streamlit as st
 import requests
-import shutil
 
 from io import BytesIO
 from PIL import Image
 
-
-data = {
-    "Sekiro™: Shadows Die Twice - GOTY Edition": 814380,
-    "ELDEN RING": 1245620,
-    "Dota 2": 570,
-    "Counter-Strike 2": 730,
-    "Tom Clancy's Rainbow Six® Siege": 359550,
-    "Doki Doki Literature Club!": 698780}
-
-games = [
-    "ELDEN RING", "Counter-Strike 2", "Doki Doki Literature Club!"
-]
+titles_dict = pd.read_pickle("data/2k_titles.pkl")
+ids_dict = pd.read_pickle("data/2k_ids.pkl")
 
 
 def generate_gamebox(titles):
     titles_id = []
     for title in titles:
-        titles_id.append(data[title])
+        titles_id.append(titles_dict[title])
 
     for id in titles_id:
         url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg"
@@ -39,20 +29,4 @@ def generate_gamebox(titles):
                 key=id
             )
 
-
-# def fetch_image(games_title):
-#     # Get id of each games
-#     id_arr = []
-#     for game in games_title:
-#         id_arr.append(data[game])
-
-#     for app_id in id_arr:
-#         img_url = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{app_id}/header.jpg"
-#         response = requests.get(img_url)
-
-#         if response.status_code == 200:
-#             # with open(f"{app_id}.jpg", 'wb') as out_f:
-#             #     shutil.copyfileobj(response.raw, out_f)
-#             return generate_container(app_id=app_id, response=response)
-#         else:
-#             return f"Cannot generate {app_id} column"
+    return titles_id
