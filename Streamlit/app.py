@@ -3,7 +3,6 @@ from streamlit_option_menu import option_menu
 from func import *
 from model import *
 
-
 if "user_preferences" not in st.session_state:
     st.session_state["user_preferences"] = {}
 
@@ -25,11 +24,15 @@ def games_recomm(pref_dict, k=10):
             "app_id": pref_dict.keys(),
             "is_recommended": pref_dict.values()
         })
-        st.write(pred_df)
 
         res = ease_model(pred_df=pred_df, k=k)
+        st.session_state['rs'] = res
 
-        st.write(res)
+        if len(res) >= 1:
+            st.success(
+                f"Go to result page to view top {len(res)} recommendations")
+        else:
+            st.error("Recommendation failed. Please restart the session")
 
 
 # Main Page Header
@@ -71,6 +74,10 @@ def home_page():
     state = st.button("Get recommendations")
 
     if state:
+        if "user_preferences" in st.session_state:
+            del st.session_state["user_preferences"]
+            st.session_state["user_preferences"] = {}
+
         for i in user_input:
             if st.session_state[i] == "Positive":
                 st.session_state["user_preferences"][i] = 1
@@ -90,7 +97,14 @@ def home_page():
 
 
 def result_page():
-    pass
+    if "rs" not in st.session_state:
+        st.error(
+            'Please input game preferences in Home page and run "Get recommendations')
+    else:
+        st.success(f"Top {len(st.session_state['rs'])} recommendations")
+
+        st.session_state
+        generate_resbox(st.session_state["rs"])
 
 # About page
 # Show the information of the project and the sites

@@ -30,3 +30,15 @@ def generate_gamebox(titles):
             )
 
     return titles_id
+
+
+def generate_resbox(ids_list):
+    for id in ids_list:
+        url_img = f"https://cdn.cloudflare.steamstatic.com/steam/apps/{id}/header.jpg"
+        resp = requests.get(url_img)
+
+        if resp.status_code == 200:
+            with st.container():
+                st.image(BytesIO(resp.content))
+                st.caption(ids_dict[id])
+                st.divider()
